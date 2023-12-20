@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Stopwatch App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: black;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .clock {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #display {
+      font-size: 3rem;
+      background-color: #333;
+      padding: 40px 60px;
+      border-radius: 50%;
+      width: 250px;
+      height: 250px;
+      text-align: center;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    #display:after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 6px;
+      height: 90px;
+      background-color: white;
+      transform-origin: 50% 100%;
+      transform: translateX(-50%) rotate(90deg);
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 20px;
+    }
+
+    #startPause,
+    #reset,
+    #stop {
+      padding: 10px 20px;
+      cursor: pointer;
+      border-radius: 5px;
+      border: none;
+      background-color: #444;
+      color: white;
+      font-size: 1rem;
+    }
+
+    #lapList {
+      list-style: none;
+      padding: 0;
+      text-align: left;
+    }
+
+    #lapList li {
+      margin-bottom: 5px;
+    }
+
+    .lap-info {
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .lap-info p {
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="clock">
+    <h1>Stopwatch</h1>
+    <div id="display">00:00:00</div>
+    <div class="controls">
+      <button id="startPause" onclick="startPause()">Start</button>
+      <button id="stop" onclick="stop()">Stop</button>
+      <button id="reset" onclick="reset()">Reset</button>
+    </div>
+    <div class="lap-info">
+      <div class="laps">
+        <h2>Lap Times:</h2>
+        <ul id="lapList"></ul>
+      </div>
+      <div class="side-info">
+        <p>Best Lap: <span id="bestLap">-</span></p>
+        <p>Average Lap Time: <span id="averageLapTime">-</span></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let startTime;
+    let running = false;
+    let laps = [];
+    let lapStartTime;
+
+    function startPause() {
+      const startPauseBtn = document.getElementById("startPause");
+      if (!running) {
+        startPauseBtn.textContent = "Pause";
+        start();
+      } else {
+        startPauseBtn.textContent = "Start";
+        pause();
+      }
+    }
+
+    function start() {
+      if (!running) {
+        running = true;
+        startTime = Date.now() - (lapStartTime || 0);
+        lapStartTime = 0;
+        update();
+      }
+    }
+
+    function pause() {
+      if (running) {
+        running = false;
+        lapStartTime = Date.now() - startTime;
+      }
+    }
+
+    function stop() {
+      if (running) {
+        running = false;
+        laps.push(Date.now() - startTime);
+        startTime = 0;
+        lapStartTime = 0;
+        updateLaps();
+      }
+    }
+
+    function reset() {
+      running = false;
+      startTime = 0;
+      lapStartTime = 0;
+      laps = [];
+      update();
+      updateLaps();
+    }
+
+    function update() {
+      const display = document.getElementById("display");
+      const currentTime = running ? Date.now() - startTime : lapStartTime;
+      const formattedTime = formatTime(currentTime);
+      display.textContent = formattedTime;
+      requestAnimationFrame(update);
+    }
+
+    function formatTime(milliseconds) {
+      const date = new Date(milliseconds);
+      const minutes = date.getUTCMinutes().toString().padStart(2, "0");
+      const seconds = date.getUTCSeconds().toString().padStart(2, "0");
+      const centiseconds = Math.floor(date.getUTCMilliseconds() / 10)
+        .toString()
+        .padStart(2, "0");
+      return `${minutes}:${seconds}:${centiseconds}`;
+    }
+
+    function updateLaps() {
+      const lapList = document.getElementById("lapList");
+      lapList.innerHTML = "";
+      laps.forEach((lap, index) => {
+        const lapTime = formatTime(lap);
+        const li = document.createElement("li");
+        li.textContent = `Lap ${index + 1}: ${lapTime}`;
+        lapList.appendChild(li);
+      });
+
+      const bestLapElement = document.getElementById("bestLap");
+      const averageLapTimeElement = document.getElementById("averageLapTime");
+
+      if (laps.length > 0) {
+        const bestLap = Math.min(...laps);
+        const averageLap = laps.reduce((acc, lap) => acc + lap, 0) / laps.length;
+
+        bestLapElement.textContent = formatTime(bestLap);
+        averageLapTimeElement.textContent = formatTime(averageLap);
+      } else {
+        bestLapElement.textContent = "-";
+        averageLapTimeElement.textContent = "-";
+      }
+    }
+
+    update();
+  </script>
+</body>
+</html>
